@@ -1,18 +1,28 @@
 # Global Energetic Grid Research Hub
 
-120+ GPS coordinates spanning **ALL 7 continents** from *"The Fabric of Reality v0.1"* (Blood Moon Eclipse Release - March 3, 2026).
+**The Fabric of Reality v0.1** - Blood Moon Eclipse Release (March 3, 2026, 3:33AM PST)
 
-## Test these patterns:
-- φ_n scaling (Giza φ₃ = 29.9792°N, Jerusalem φ₄, etc.)
+**Primary DOI:** https://doi.org/10.5281/zenodo.18848157
+
+120+ GPS coordinates spanning **ALL 7 continents** reveal measurable patterns:
+- φ_n scaling (Giza φ₃ = 29.9792°N exactly)
 - Great circle alignments  
 - Piezoelectric material concentrations
 - Water-electrolyte site patterns
 
-## Contribute:
-1. GPS-measure sites using Issues template
-2. Submit verifications, photos, measurements
+**Full paper:** [Zenodo](https://doi.org/10.5281/zenodo.18848157)
+
+## Key Testable Predictions
+- Giza-Jerusalem 426.8 km (R¹⁰ scaling)
+- Jerusalem-Stonehenge 3342 km great circle  
+- Antipodal symmetry Giza-Teotihuacan
+- Toroidal closure ∑cos(nk) = 0
+
+## Contribute
+1. GPS-measure sites using [Issues template](https://github.com/globalenergygrid/issues/new?assignees=&labels=&projects=&template=globalenergygrid-site-verification.md&title=Site+Verification%3A+%5BSite+Name%5D)
+2. Submit photos, measurements, field data
 3. Propose additional coordinates
 
-**Primary archive:** Zenodo DOI assigned post-upload (check Issues for link)
+**License:** [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/) - No commercial use, no modifications to core theory.
 
-**License:** CC BY-NC-ND 4.0 - No commercial use, no modifications to core theory.
+**Global researchers invited to verify.** Submit findings via Issues.
