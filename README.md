@@ -1,10 +1,10 @@
 # Global Energetic Grid Research Hub
 
-**The Fabric of Reality v0.1** - Blood Moon Eclipse Release (March 3, 2026, 3:33AM PST)
+**The Fabric of Reality v0.1,x - (March 3, 2026, 3:33AM PST)
 
 **Primary DOI:** https://doi.org/10.5281/zenodo.18848157
 
-120+ GPS coordinates spanning **ALL 7 continents** reveal measurable patterns:
+70 node verified, GPS coordinates spanning **ALL 7 continents** reveal measurable patterns:
 - φ_n scaling (Giza φ₃ = 29.9792°N exactly)
 - Great circle alignments  
 - Piezoelectric material concentrations
