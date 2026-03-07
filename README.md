@@ -1,6 +1,6 @@
 # Global Energetic Grid Research Hub
 
-**The Fabric of Reality v0.1,x - (March 3, 2026, 3:33AM PST)
+**The Fabric of Reality v0.1.x - (March 3, 2026, 3:33AM PST)
 
 **Primary DOI:** https://doi.org/10.5281/zenodo.18848157
 
