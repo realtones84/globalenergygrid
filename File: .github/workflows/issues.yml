@@ -1,0 +1,22 @@
+name: Auto-label Issues
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+    - uses: actions/labeler@v4
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        configuration-path: .github/labeler.ymlTEMPLATE 5: Label ConfigFile: .github/labeler.yml# Auto-labeling rules
+needs-verification:
+- '*[φₙ]*'
+research:
+- '*[CSV]*'
+verified:
+- 'verified*'
