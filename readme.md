@@ -7,6 +7,7 @@
 ---
 
 ## 📱 φₙ GRID CALCULATOR v1.0 [LIVE]
+(Holographic Field Detector)
 **[Download App ZIP](https://github.com/realtones84/globalenergygrid/releases/latest)**  
 *Extract → Install APK → Field Measurements*
 
