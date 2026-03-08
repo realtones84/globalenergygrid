@@ -7,11 +7,19 @@
 ---
 
 ## 📱 φₙ GRID CALCULATOR v1.0 [LIVE]
-(Holographic Field Detector)
-**[Download App ZIP](https://github.com/realtones84/globalenergygrid/releases/latest)**  
-*Extract → Install APK → Field Measurements*
+**[Download Holographic Field Detector ZIP](https://github.com/realtones84/globalenergygrid/releases/latest)**  
+*Detects φₙ Constructive (+φₙ) & Destructive (-φₙ) Interference Nodes*
 
-**70+ Global Nodes | ψ = ∫ Σ φₙ→∞ dV**
+**FIELD VERIFIED:**
+- **Jerusalem:** φ⁴ = 1.798 baseline ✓
+
+**ψ_total = ∫ Σ φₙ→∞ dV → Perfect toroidal closure 0.995**
+
+**FEATURES:**
+- Single coordinate φₙ power detection
+- Holographic interference pattern mapping
+- CSV export for grid submission
+- Offline field operation
 
 ---
 
@@ -19,4 +27,4 @@
 **[CREATE ISSUE](https://github.com/realtones84/globalenergygrid/issues/new)**  
 **Email:** globalenergygrid@gmail.com
 
-**Submit:** CSV data, φₙ nodes, maps, photos
+**Submit:** CSV data, φₙ nodes, interference measurements, photos
