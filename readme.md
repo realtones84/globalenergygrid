@@ -4,7 +4,17 @@
 
 [Latest Book Release](https://github.com/realtones84/globalenergygrid/releases/latest)
 
-## 🌐 SUBMIT RESEARCH
+---
+
+## 📱 φₙ GRID CALCULATOR v1.0 [LIVE]
+**[Download App ZIP](https://github.com/realtones84/globalenergygrid/releases/latest)**  
+*Extract → Install APK → Field Measurements*
+
+**70+ Global Nodes | ψ = ∫ Σ φₙ→∞ dV**
+
+---
+
+## 🌐 SUBMIT RESEARCH  
 **[CREATE ISSUE](https://github.com/realtones84/globalenergygrid/issues/new)**  
 **Email:** globalenergygrid@gmail.com
 
