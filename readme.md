@@ -2,8 +2,7 @@
 
 **Romans 1:20** - "His invisible qualities clearly seen..."
 
-[Latest Book] download from main page
----
+[Latest Book Release](https://github.com/realtones84/globalenergygrid/releases/latest)
 
 ## 🌐 SUBMIT RESEARCH
 **[CREATE ISSUE](https://github.com/realtones84/globalenergygrid/issues/new)**  
