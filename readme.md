@@ -2,7 +2,7 @@
 
 **Romans 1:20** - "His invisible qualities clearly seen..."
 
-[Latest Book](The-Fabric-of-Reality-latest.docx)
+[Latest Book](The-Fabric-of-Reality-v.02.docx)
 
 ---
 
