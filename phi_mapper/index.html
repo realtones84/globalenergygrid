@@ -47,6 +47,72 @@
       {name: 'Teotihuacan', lat: 19.6925, lng: -98.8438, color: '#ff44aa', desc: 'φ³ Pyramid Grid', size: 8},
       {name: 'Chichen Itza', lat: 20.6830, lng: -88.5686, color: '#aaff44', desc: 'φ² Equinox Gate', size: 8},
       {name: 'Pyramid of Sun', lat: 19.6925, lng: -98.8438, color: '#44ffaa', desc: 'φ³ North Anchor', size: 8}
+   const phiNodes = [
+  // φ⁰ BASELINE (Equatorial)
+  {name: 'Sigiriya φ⁰', lat: 7.9570, lng: 80.7603, color: '#88aaff', desc: 'Isaiah 11:11', size: 8, phi: 0},
+  {name: 'Nan Madol φ⁰', lat: 6.8453, lng: 158.3350, color: '#44ffaa', desc: 'Isaiah 42:10', size: 8, phi: 0},
+  {name: 'Borobudur φ⁰', lat: -7.6079, lng: 110.2037, color: '#aaff44', desc: 'Rev 7:9', size: 8, phi: 0},
+  {name: 'Gunung Padang φ⁰', lat: -6.9931, lng: 107.0450, color: '#44aaff', desc: 'Rev 7:9 TELL', size: 9, phi: 0},
+
+  // φ¹ GENESIS LAYER
+  {name: 'Göbekli Tepe φ¹', lat: 37.2231, lng: 38.9225, color: '#44aaff', desc: 'Romans 1:20 TELL', size: 10, phi: 1},
+  {name: 'Chavín de Huántar φ¹', lat: -9.5943, lng: -77.1778, color: '#88aaff', desc: 'Isaiah 40:28', size: 8, phi: 1},
+  {name: 'Hampi φ¹', lat: 15.3350, lng: 76.4600, color: '#aaff88', desc: 'Psalm 96:3', size: 8, phi: 1},
+  {name: 'Derinkuyu φ¹⁰', lat: 38.3730, lng: 34.7416, color: '#ff88ff', desc: 'Isaiah 2:10', size: 9, phi: 10},
+  {name: 'Tongatapu φ¹', lat: -21.1334, lng: -175.2004, color: '#88ff88', desc: 'Isaiah 24:15', size: 8, phi: 1},
+  {name: 'Khajuraho φ¹', lat: 24.8318, lng: 79.9199, color: '#ff88aa', desc: 'Psalm 96:3', size: 8, phi: 1},
+  {name: 'Axum φ¹', lat: 14.1244, lng: 38.7214, color: '#44aaff', desc: 'Isaiah 18:1 TELL', size: 9, phi: 1},
+
+  // φ² HEMISPHERE BAND
+  {name: 'Teotihuacan φ²', lat: 19.6925, lng: -98.8438, color: '#ff44aa', desc: 'Joel 2:3', size: 10, phi: 2},
+  {name: 'Chichen Itza φ²', lat: 20.6830, lng: -88.5686, color: '#aaff44', desc: 'Malachi 1:11', size: 9, phi: 2},
+  {name: 'Angkor Wat φ²', lat: 13.4125, lng: 103.8669, color: '#44ffaa', desc: 'Psalm 84:1', size: 9, phi: 2},
+  {name: 'Pyramid of Sun φ²', lat: 19.6925, lng: -98.8438, color: '#44ffaa', desc: 'Hosea 6:3', size: 9, phi: 2},
+  {name: 'Ollantaytambo φ²', lat: -13.2583, lng: -72.2633, color: '#88ff88', desc: 'Isaiah 40:28', size: 9, phi: 2},
+  {name: 'Yonaguni φ²', lat: 24.4661, lng: 123.0152, color: '#ff88ff', desc: 'Rev 14:6', size: 8, phi: 2},
+  {name: 'Tikal φ²', lat: 17.2221, lng: -89.6232, color: '#ffaa44', desc: 'Hosea 6:3', size: 9, phi: 2},
+  {name: 'Monte Albán φ²', lat: 17.0431, lng: -96.7675, color: '#aaff88', desc: 'Malachi 4:2', size: 8, phi: 2},
+  {name: 'Cuicuilco φ²', lat: 19.3256, lng: -99.1750, color: '#ff4444', desc: 'Joel 2:30', size: 8, phi: 2},
+  {name: 'Yucay Valley φ²', lat: -13.2658, lng: -72.1833, color: '#88ff88', desc: 'Psalm 48:2', size: 8, phi: 2},
+  {name: 'Great Zimbabwe φ²', lat: -20.2668, lng: 28.6112, color: '#88ff88', desc: 'Isaiah 18:7', size: 9, phi: 2},
+
+  // φ³ METROLOGICAL ANCHORS
+  {name: 'Giza φ³', lat: 29.9792, lng: 31.1342, color: '#ff4444', desc: 'Isaiah 19:19', size: 16, phi: 3},
+  {name: 'Petra φ³', lat: 30.3285, lng: 35.4444, color: '#ffaa44', desc: 'Isaiah 42:11 TELL', size: 10, phi: 3},
+  {name: 'Persepolis φ³', lat: 29.9349, lng: 52.8916, color: '#ffaa88', desc: 'Isaiah 45:1', size: 9, phi: 3},
+  {name: 'Luxor/Karnak φ⁵', lat: 25.7195, lng: 32.6575, color: '#ffd700', desc: 'Exodus 3:8', size: 12, phi: 5},
+  {name: 'Tiwanaku φ³', lat: -16.5547, lng: -68.6739, color: '#44ff44', desc: 'Isaiah 45:6', size: 9, phi: 3},
+  {name: 'Puma Punku φ³', lat: -16.5578, lng: -68.6797, color: '#ff4444', desc: 'Daniel 2:44', size: 9, phi: 3},
+  {name: 'Crystal River φ³', lat: 28.9172, lng: -82.5835, color: '#ff6666', desc: 'Luke 19:40', size: 10, phi: 3},
+
+  // φ⁴ SACRED ANCHOR
+  {name: 'Jerusalem φ⁴', lat: 31.7779, lng: 35.2358, color: '#44ff44', desc: 'Isaiah 2:3 TELL', size: 14, phi: 4},
+
+  // φ⁵-φ⁶ EURASIA
+  {name: 'Great Wall φ⁵', lat: 40.4319, lng: 116.5704, color: '#ff88ff', desc: 'Isaiah 49:22', size: 9, phi: 5},
+  {name: 'Taj Mahal φ³', lat: 27.1751, lng: 78.0421, color: '#ffd700', desc: 'Psalm 27:4', size: 8, phi: 3},
+  {name: 'Baalbek φ⁶', lat: 34.0069, lng: 36.2039, color: '#ff44ff', desc: 'Hosea 2:16', size: 12, phi: 6},
+
+  // φ⁷-φ⁹ TERMINAL HARMONICS
+  {name: 'Stonehenge φ⁷', lat: 51.1788, lng: -1.8262, color: '#ffaa44', desc: 'Gen 28:17', size: 13, phi: 7},
+  {name: 'Newgrange φ⁸', lat: 53.6946, lng: -6.4756, color: '#ff8888', desc: 'Isaiah 51:1', size: 11, phi: 8},
+  {name: 'Rosslyn Chapel φ⁹', lat: 55.8565, lng: -3.1590, color: '#ffaa88', desc: 'Psalm 19:1', size: 11, phi: 9},
+
+  // φ⁸ SOUTHERN CLOSURE
+  {name: 'Easter Island φ₈', lat: -27.1127, lng: -109.3497, color: '#ff8888', desc: 'Isaiah 43:12', size: 11, phi: 8},
+  {name: 'Machu Picchu φ⁷', lat: -13.1631, lng: -72.5450, color: '#aa44ff', desc: 'Psalm 48:2', size: 10, phi: 7}
+
+  // ADD THESE 10 NEW SITES to your existing phiNodes array:
+{name: 'Rosslyn Chapel φ⁹', lat: 55.8565, lng: -3.1590, color: '#ffaa88', desc: 'Psalm 19:1', size: 12, phi: 9},
+{name: 'Newgrange Ireland φ⁸', lat: 53.6946, lng: -6.4756, color: '#ff8888', desc: 'Isaiah 51:1', size: 11, phi: 8},
+{name: 'Tikal Guatemala φ²', lat: 17.2221, lng: -89.6232, color: '#ffaa44', desc: 'Hosea 6:3', size: 9, phi: 2},
+{name: 'Chavín de Huántar φ¹', lat: -9.5943, lng: -77.1778, color: '#88aaff', desc: 'Isaiah 40:28', size: 9, phi: 1},
+{name: 'Monte Albán φ²', lat: 17.0431, lng: -96.7675, color: '#aaff88', desc: 'Malachi 4:2', size: 9, phi: 2},
+{name: 'Cuicuilco Mexico φ²', lat: 19.3256, lng: -99.1750, color: '#ff4444', desc: 'Joel 2:30', size: 9, phi: 2},
+{name: 'Yucay Sacred Valley φ²', lat: -13.2658, lng: -72.1833, color: '#88ff88', desc: 'Psalm 48:2', size: 9, phi: 2},
+{name: 'Gunung Padang φ¹', lat: -6.9931, lng: 107.0450, color: '#44aaff', desc: 'Rev 7:9 TELL', size: 10, phi: 1},
+{name: 'Derinkuyu Turkey φ¹⁰', lat: 38.3730, lng: 34.7416, color: '#ff88ff', desc: 'Isaiah 2:10', size: 11, phi: 10},
+{name: 'Hampi India φ²', lat: 15.3350, lng: 76.4600, color: '#aaff88', desc: 'Psalm 96:3', size: 9, phi: 2}
     ];
     
     let mapMode = true;
