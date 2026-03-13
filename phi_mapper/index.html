@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin:0; background:#000; font-family:monospace; color:#ffd700; }
+    #hud { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.8); padding:15px; border-radius:10px; }
+    canvas { width:100vw; height:100vh; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="hud">
+    <div>φₙ Live Mapper</div>
+    <div id="phiIndex">-</div>
+    <div id="deltaLat">-</div>
+    <div id="status">-</div>
+    <div id="hud">
+  <br>
+  <a id="exportBtn" href="#" download="phi_data.json" style="color:#00ff00;font-size:14px;">📊 Export φₙ Session</a>
+</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const phi = 1.6180339887;
+    const giza = 29.9792458;
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    function drawToroidalField(phiIndex) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const scale = phiIndex * 100;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      // Golden φₙ spiral field
+      ctx.strokeStyle = `hsl(${phiIndex * 30}, 100%, 60%)`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for(let i = 0; i < 10; i++) {
+        const radius = scale * Math.pow(phi, i / 5);
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      }
+      ctx.stroke();
+      
+      // Pulsing φₙ core
+      const pulse = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, scale * 2);
+      gradient.addColorStop(0, `rgba(255, 215, 0, ${pulse})`);
+      gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    navigator.geolocation.watchPosition(pos => {
+      const deltaLat = Math.abs(pos.coords.latitude - giza);
+      const phiIndex = Math.log10(deltaLat) / Math.log10(phi);
+      
+      document.getElementById('phiIndex').textContent = `φₙ: ${phiIndex.toFixed(3)}`;
+      document.getElementById('deltaLat').textContent = `Δlat: ${deltaLat.toFixed(4)}°`;
+      
+      let status = phiIndex < 1.5 ? 'φ₁ NODE' : phiIndex < 2 ? 'φ² RESONANCE' : 'φ³ ANCHOR';
+      document.getElementById('status').innerHTML = `<span style="color:#${phiIndex<1.5?'00ff00':phiIndex<2?'ffaa00':'ff4444'}">${status}</span>`;
+      
+      drawToroidalField(phiIndex);
+    }, console.error, {enableHighAccuracy: true});
+
+    // Export φₙ data for scientists
+let phiData = [];
+setInterval(() => {
+  phiData.push({
+    timestamp: new Date().toISOString(),
+    latitude: pos.coords.latitude,
+    longitude: pos.coords.longitude,
+    deltaLat: deltaLat,
+    phiIndex: phiIndex,
+    status: status,
+    scale: scale
+  });
+  
+  // Update export link
+  const exportBtn = document.getElementById('exportBtn');
+  const jsonData = JSON.stringify(phiData.slice(-100), null, 2); // Last 100 readings
+  exportBtn.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(jsonData);
+}, 5000); // Update every 5 seconds
+  </script>
+</body>
+</html>
