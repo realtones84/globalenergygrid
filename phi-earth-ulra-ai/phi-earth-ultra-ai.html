@@ -1,39 +1,408 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Φ Earth Ultra AI Research</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Φ Earth Ultra AI Research</title>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 
-<style>
-body{margin:0;background:black;color:#ffd700;font-family:monospace;overflow:hidden}
-#ui{position:absolute;top:10px;left:10px;z-index:10;background:#000c;padding:10px;border-radius:8px;max-width:360px}
-button{background:#ffd700;border:none;padding:6px;margin:3px;font-weight:bold;cursor:pointer}
-input{width:100%}
-</style>
+  <style>
+    body{
+      margin:0;
+      background:black;
+      color:#ffd700;
+      font-family:monospace;
+      overflow:hidden;
+    }
+    #ui{
+      position:absolute;
+      top:10px;
+      left:10px;
+      z-index:10;
+      background:#000c;
+      padding:10px;
+      border-radius:8px;
+      max-width:360px;
+    }
+    button{
+      background:#ffd700;
+      border:none;
+      padding:6px;
+      margin:3px;
+      font-weight:bold;
+      cursor:pointer;
+      color:#000;
+    }
+    input[type="range"]{
+      width:100%;
+    }
+  </style>
 </head>
 
 <body>
 
 <div id="ui">
-<b>Φ ULTRA AI EARTH</b><br><br>
+  <b>Φ ULTRA AI EARTH</b><br><br>
 
-Time Filter:
-<input type="range" min="-5000" max="2026" value="2026" id="timeSlider">
+  Time Filter:
+  <input type="range" min="-5000" max="2026" value="2026" id="timeSlider">
 
-<br><br>
+  <br><br>
 
-<button onclick="toggleTerrain()">Terrain</button>
-<button onclick="toggleClusters()">AI Clusters</button>
-<button onclick="togglePhi()">Φ Network</button>
-<button onclick="scanPhi()">Scan φ</button>
-<button onclick="loadOSM()">Load 40k Sites</button>
-<button onclick="exportData()">Export</button>
+  <button onclick="toggleTerrain()">Terrain</button>
+  <button onclick="toggleClusters()">AI Clusters</button>
+  <button onclick="togglePhi()">Φ Network</button>
+  <button onclick="scanPhi()">Scan φ</button>
+  <button onclick="loadOSM()">Load OSM Sites</button>
+  <button onclick="exportData()">Export</button>
 
-<div id="info"></div>
+  <div id="info" style="margin-top:8px;font-size:12px;"></div>
 </div>
 
+<script>
+/* =========================
+   GLOBALS
+========================= */
+
+const phi = 1.6180339887;
+let showPhi = true;
+let showTerrain = true;
+let showClusters = false;
+
+let sites = [];
+let currentSites = [];
+
+/* =========================
+   THREE.JS EARTH
+========================= */
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(
+  60,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  2000
+);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+// non‑pure black so you can see contrast
+renderer.setClearColor(0x111111);
+document.body.appendChild(renderer.domElement);
+
+// TEXTURE + HEIGHT MAP
+const texture = new THREE.TextureLoader().load(
+  "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.jpg"
+);
+
+const heightMap = new THREE.TextureLoader().load(
+  "https://threejs.org/examples/textures/terrain/heightmap.png"
+);
+
+// SPHERE WITH DISPLACEMENT
+const geometry = new THREE.SphereGeometry(5, 128, 128);
+
+const material = new THREE.MeshStandardMaterial({
+  map: texture,
+  displacementMap: heightMap,
+  displacementScale: 0.3
+});
+
+const earth = new THREE.Mesh(geometry, material);
+scene.add(earth);
+
+// LIGHTING
+const light = new THREE.PointLight(0xffffff, 2);
+light.position.set(10, 10, 10);
+scene.add(light);
+
+const ambient = new THREE.AmbientLight(0x404040);
+scene.add(ambient);
+
+camera.position.z = 12;
+
+// ANIMATION LOOP
+function animate() {
+  requestAnimationFrame(animate);
+  earth.rotation.y += 0.0005;
+  renderer.render(scene, camera);
+}
+animate();
+
+/* =========================
+   2D OVERLAY CANVAS
+========================= */
+
+const canvas = document.createElement("canvas");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+document.body.appendChild(canvas);
+canvas.style.position = "absolute";
+canvas.style.top = 0;
+canvas.style.left = 0;
+canvas.style.zIndex = 5;
+canvas.style.pointerEvents = "none";
+canvas.style.background = "rgba(0,0,0,0.35)";
+
+const ctx = canvas.getContext("2d");
+
+/* =========================
+   SITES / CORE DATA
+========================= */
+
+function addSite(name, lat, lng, year) {
+  sites.push({ name, lat, lng, year });
+}
+
+function loadCore() {
+  addSite("Giza", 29.9792, 31.1342, -2560);
+  addSite("Stonehenge", 51.1788, -1.8262, -3000);
+  addSite("Machu Picchu", -13.1631, -72.545, 1450);
+}
+
+loadCore();
+currentSites = [...sites];
+
+/* =========================
+   PROJECTION + DISTANCE
+========================= */
+
+function project(lat, lng) {
+  const r = 300;
+  const x = canvas.width / 2 +
+    r * Math.cos(lat * Math.PI/180) *
+    Math.sin(lng * Math.PI/180);
+
+  const y = canvas.height / 2 -
+    r * Math.sin(lat * Math.PI/180);
+
+  return { x, y };
+}
+
+function distance(a, b) {
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+
+  const s = Math.sin(dLat/2)**2 +
+    Math.cos(a.lat * Math.PI/180) *
+    Math.cos(b.lat * Math.PI/180) *
+    Math.sin(dLng/2)**2;
+
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+/* =========================
+   PHI NETWORK
+========================= */
+
+function drawPhi() {
+  ctx.strokeStyle = "#ffaa00aa";
+
+  for (let i = 0; i < currentSites.length; i++) {
+    for (let j = i + 1; j < currentSites.length; j++) {
+      const aSite = currentSites[i];
+      const bSite = currentSites[j];
+
+      const d = distance(aSite, bSite);
+      const p = Math.log(d) / Math.log(phi);
+
+      if (Math.abs(p - Math.round(p)) < 0.03) {
+        const a = project(aSite.lat, aSite.lng);
+        const b = project(bSite.lat, bSite.lng);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+/* =========================
+   K‑MEANS CLUSTERING
+========================= */
+
+function kmeans(k = 5, points = currentSites) {
+  if (points.length < k) return [];
+
+  let centroids = points.slice(0, k).map(p => ({
+    lat: p.lat,
+    lng: p.lng
+  }));
+
+  for (let iter = 0; iter < 5; iter++) {
+    const clusters = Array.from({ length: k }, () => []);
+
+    points.forEach(s => {
+      let best = 0;
+      let min = Infinity;
+      centroids.forEach((c, i) => {
+        const d = Math.hypot(s.lat - c.lat, s.lng - c.lng);
+        if (d < min) { min = d; best = i; }
+      });
+      clusters[best].push(s);
+    });
+
+    centroids = clusters.map((cluster, i) => {
+      if (cluster.length === 0) return centroids[i];
+      return {
+        lat: cluster.reduce((a, b) => a + b.lat, 0) / cluster.length,
+        lng: cluster.reduce((a, b) => a + b.lng, 0) / cluster.length
+      };
+    });
+  }
+
+  return centroids;
+}
+
+/* =========================
+   RENDER 2D OVERLAY
+========================= */
+
+function render2D() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Sites
+  currentSites.forEach(s => {
+    const p = project(s.lat, s.lng);
+    ctx.fillStyle = "#ffd700";
+    ctx.fillRect(p.x, p.y, 3, 3);
+  });
+
+  // Phi network
+  if (showPhi) {
+    drawPhi();
+  }
+
+  // Clusters
+  if (showClusters) {
+    const centers = kmeans(6, currentSites);
+    centers.forEach(c => {
+      const p = project(c.lat, c.lng);
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  requestAnimationFrame(render2D);
+}
+render2D();
+
+/* =========================
+   TIME FILTER
+========================= */
+
+const timeSlider = document.getElementById("timeSlider");
+
+timeSlider.oninput = function() {
+  const year = parseInt(this.value);
+  filterByTime(year);
+};
+
+function filterByTime(year) {
+  currentSites = sites.filter(s => s.year <= year);
+  document.getElementById("info").innerText =
+    "Year ≤ " + year + " | Visible sites: " + currentSites.length;
+}
+
+/* =========================
+   OSM LOAD (LIMITED)
+========================= */
+
+async function loadOSM() {
+  try {
+    const query =
+      "https://overpass-api.de/api/interpreter?data=[out:json][timeout:25];" +
+      "node[\"historic\"=\"archaeological_site\"](50.0,-10.0,60.0,5.0);" + // smallish bbox (UK region)
+      "out 2000;";
+
+    const r = await fetch(query);
+    const data = await r.json();
+
+    data.elements.forEach(e => {
+      sites.push({
+        name: (e.tags && e.tags.name) ? e.tags.name : "OSM Site",
+        lat: e.lat,
+        lng: e.lon,
+        year: 0
+      });
+    });
+
+    // Reapply filter with current slider value
+    const y = parseInt(timeSlider.value);
+    currentSites = sites.filter(s => s.year <= y);
+
+    document.getElementById("info").innerText =
+      "Loaded OSM sites: " + data.elements.length +
+      " | Total sites: " + sites.length;
+  } catch (e) {
+    document.getElementById("info").innerText =
+      "OSM load failed (network / CORS / rate limit).";
+    console.error(e);
+  }
+}
+
+/* =========================
+   BUTTONS / ACTIONS
+========================= */
+
+function togglePhi() {
+  showPhi = !showPhi;
+}
+
+function toggleClusters() {
+  showClusters = !showClusters;
+}
+
+function toggleTerrain() {
+  showTerrain = !showTerrain;
+  material.displacementScale = showTerrain ? 0.3 : 0.0;
+}
+
+function scanPhi() {
+  const results = [];
+
+  currentSites.forEach(s => {
+    const d = distance(s, { lat: 29.9792, lng: 31.1342 }); // Giza reference
+    const p = Math.log(d) / Math.log(phi);
+    if (Math.abs(p - Math.round(p)) < 0.02) {
+      results.push(s.name);
+    }
+  });
+
+  document.getElementById("info").innerText =
+    "φ matches to Giza: " + results.length;
+}
+
+function exportData() {
+  const a = document.createElement("a");
+  a.href = "data:text/json;charset=utf-8," +
+    encodeURIComponent(JSON.stringify(sites,null,2));
+  a.download = "phi_ultra_dataset.json";
+  a.click();
+}
+
+/* =========================
+   RESIZE HANDLING
+========================= */
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+
+</body>
+</html>
 <script>
 
 /* =========================
