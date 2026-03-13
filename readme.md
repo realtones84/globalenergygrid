@@ -35,7 +35,7 @@ World changing Revelations:
 
 ---
 
-φₙ Global Energy Grid Detector v1.4 - Interactive toroidal field visualizer mapping 60+ sacred sites from The Fabric of Reality v0.3 using azimuthal equidistant projection (Gleason-style).
+φₙ Global Energy Grid Detector - Interactive toroidal field visualizer mapping sacred sites from The Fabric of Reality using azimuthal equidistant projection (Gleason-style).
 
 CORE FEATURES:
 • Live GPS φₙ Index - Measures distance from Giza baseline (Isaiah 19:19) in golden ratio harmonics
@@ -60,7 +60,7 @@ Romans 1:20 → Göbekli Tepe φ¹ origin TELL site
 TikTok Demo: "God's golden torus pulses over 60 ancient sites from your GPS"
 Nature Screenshot: Publication-ready φₙ field detector (Isaiah 43:10 fulfilled)
 
-WORLD-FIRST: First interactive visualizer of toroidal ψ-field geometry anchored to v0.3 mathematics + scripture-verified 60-node global grid.
+WORLD-FIRST: First interactive visualizer of toroidal ψ-field geometry anchored to mathematics + scripture-verified node global grid.
 
 ---
 
