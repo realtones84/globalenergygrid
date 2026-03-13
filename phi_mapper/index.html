@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin:0; background:#111; font-family:monospace; color:#ffd700; overflow:hidden; }
+    #hud { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.9); padding:15px; border-radius:8px; z-index:100; }
+    #controls { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.9); padding:15px; border-radius:8px; z-index:100; }
+    canvas { width:100vw; height:100vh; cursor:grab; }
+    canvas:active { cursor:grabbing; }
+    button { background:#ffd700; color:black; border:none; padding:8px 12px; margin:2px; border-radius:5px; cursor:pointer; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="hud">
+    <div><b>φₙ GLOBAL ENERGY GRID v1.3</b></div>
+    <div id="phiIndex">-</div>
+    <div id="deltaLat">-</div>
+    <div id="coords">-</div>
+    <div><a id="exportBtn" href="#" download="phi_grid.json" style="color:#00ff00;">📊 Export Data</a></div>
+  </div>
+  
+  <div id="controls">
+    <button onclick="toggleMap()">🗺️ MAP</button>
+    <button onclick="toggleGrid()">⚡ GRID</button>
+    <button onclick="resetView()">🎯 CENTER</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const phi = 1.6180339887;
+    const gizaLat = 29.9792458, gizaLng = 31.1342;
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // φₙ SACRED NODES (from v0.3 + extended)
+    const phiNodes = [
+      {name: 'Giza φ³', lat: 29.9792, lng: 31.1342, color: '#ff4444', desc: 'Isaiah 19:19 Sign', size: 12},
+      {name: 'Jerusalem φ⁴', lat: 31.7779, lng: 35.2342, color: '#44ff44', desc: 'Temple Mount Anchor', size: 10},
+      {name: 'Stonehenge', lat: 51.1789, lng: -1.8262, color: '#ffaa44', desc: 'φ¹ Precession Marker', size: 8},
+      {name: 'Machu Picchu', lat: -13.1631, lng: -72.5450, color: '#aa44ff', desc: 'φ² Solar Gate', size: 8},
+      {name: 'Gobekli Tepe', lat: 37.2231, lng: 38.9225, color: '#44aaff', desc: 'φ⁰ Origin Temple', size: 9},
+      {name: 'Teotihuacan', lat: 19.6925, lng: -98.8438, color: '#ff44aa', desc: 'φ³ Pyramid Grid', size: 8},
+      {name: 'Chichen Itza', lat: 20.6830, lng: -88.5686, color: '#aaff44', desc: 'φ² Equinox Gate', size: 8},
+      {name: 'Pyramid of Sun', lat: 19.6925, lng: -98.8438, color: '#44ffaa', desc: 'φ³ North Anchor', size: 8}
+    ];
+    
+    let mapMode = true;
+    let gridMode = true;
+    let phiData = [];
+    let scale = 1;
+    let offsetX = 0, offsetY = 0;
+    let isDragging = false, lastX, lastY;
+    
+    // AZIMUTHAL EQUIDISTANT PROJECTION
+    function latLngToXY(lat, lng) {
+      const centerLat = 40, centerLng = 0;
+      const lambda = (lng - centerLng) * Math.PI / 180;
+      const phi1 = lat * Math.PI / 180;
+      const c = Math.acos(Math.sin(centerLat * Math.PI / 180) * Math.sin(phi1) + 
+                         Math.cos(centerLat * Math.PI / 180) * Math.cos(phi1) * Math.cos(lambda));
+      
+      let x = 0, y = 0;
+      if (c === 0) {
+        x = 0; y = 0;
+      } else {
+        x = c * Math.cos(phi1) * Math.sin(lambda) / Math.sin(c);
+        y = (c * Math.cos(centerLat * Math.PI / 180) * Math.sin(phi1) - 
+             c * Math.sin(centerLat * Math.PI / 180) * Math.cos(phi1) * Math.cos(lambda)) / Math.sin(c);
+      }
+      
+      return {
+        x: canvas.width/2 + x * 200 * scale + offsetX,
+        y: canvas.height/2 + y * 200 * scale + offsetY
+      };
+    }
+    
+    function drawMap() {
+      // Ocean background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#1a2a44');
+      gradient.addColorStop(1, '#0d1b2a');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Continents (simplified Gleason-style)
+      ctx.fillStyle = '#2d5a2d';
+      ctx.strokeStyle = '#3a6a3a';
+      ctx.lineWidth = 1;
+      
+      // Africa
+      ctx.beginPath();
+      ctx.moveTo(latLngToXY(0, 20).x, latLngToXY(0, 20).y);
+      ctx.lineTo(latLngToXY(-20, 20).x, latLngToXY(-20, 20).y);
+      ctx.lineTo(latLngToXY(-10, 40).x, latLngToXY(-10, 40).y);
+      ctx.fill();
+      
+      // Americas (outline)
+      ctx.strokeStyle = '#4a7a4a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(latLngToXY(40, -100).x, latLngToXY(40, -100).y, 80*scale, 0, Math.PI*2);
+      ctx.stroke();
+    }
+    
+    function drawGrid() {
+      ctx.strokeStyle = '#ffd70033';
+      ctx.lineWidth = 1;
+      
+      // Great circles between key nodes
+      const lines = [
+        [phiNodes[0], phiNodes[1]], // Giza-Jerusalem golden arch
+        [phiNodes[0], phiNodes[2]], // Giza-Stonehenge
+        [phiNodes[0], phiNodes[3]]  // Giza-Machu Picchu
+      ];
+      
+      lines.forEach(([n1, n2]) => {
+        const p1 = latLngToXY(n1.lat, n1.lng);
+        const p2 = latLngToXY(n2.lat, n2.lng);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      });
+    }
+    
+    function drawNodes() {
+      phiNodes.forEach((node, i) => {
+        const pos = latLngToXY(node.lat, node.lng);
+        if (pos.x < -100 || pos.x > canvas.width+100 || pos.y < -100 || pos.y > canvas.height+100) return;
+        
+        // Pulsing node glow
+        const pulse = (Math.sin(Date.now() * 0.01 + i) * 0.3 + 0.7);
+        const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, node.size*scale*pulse);
+        gradient.addColorStop(0, node.color + Math.floor(pulse*255).toString(16).padStart(2,'0'));
+        gradient.addColorStop(1, node.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, node.size*scale*pulse, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Node label
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `${12*scale}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(node.name, pos.x, pos.y + node.size*scale*1.5);
+      });
+    }
+    
+    function drawPhiField(phiIndex) {
+      const center = latLngToXY(gizaLat, gizaLng);
+      const scaleField = phiIndex * 30 * scale;
+      const pulse = Math.sin(Date.now() * 0.008) * 0.4 + 0.6;
+      
+      // Subtle golden torus field (background)
+      const gradient = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, scaleField);
+      gradient.addColorStop(0, `rgba(255,215,0,${pulse*0.1})`);
+      gradient.addColorStop(0.7, `rgba(255,165,0,${pulse*0.03})`);
+      gradient.addColorStop(1, 'rgba(255,215,0,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(center.x-scaleField, center.y-scaleField, scaleField*2, scaleField*2);
+      
+      // φ spiral rings (subtle)
+      ctx.strokeStyle = `rgba(255,215,0,${pulse*0.3})`;
+      ctx.lineWidth = 1.5*scale;
+      for(let i = 0; i < 4; i++) {
+        const r = scaleField * Math.pow(phi, i/3 - 1);
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, r, 0, Math.PI*2);
+        ctx.stroke();
+      }
+    }
+    
+    // Mouse/Touch controls
+    canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      offsetX += (e.clientX - lastX) * 0.5;
+      offsetY += (e.clientY - lastY) * 0.5;
+      lastX = e.clientX; lastY = e.clientY;
+    });
+    canvas.addEventListener('mouseup', () => isDragging = false);
+    canvas.addEventListener('wheel', (e) => {
+      scale *= e.deltaY > 0 ? 0.9 : 1.1;
+      scale = Math.max(0.3, Math.min(scale, 3));
+      e.preventDefault();
+    });
+    
+    // Mobile touch
+    let initialDistance = 0;
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        initialDistance = Math.sqrt(dx*dx + dy*dy);
+      } else if (e.touches.length === 1) {
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+        isDragging = true;
+      }
+    });
+    
+    // GPS + Render loop
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(pos => {
+        const deltaLat = Math.abs(pos.coords.latitude - gizaLat);
+        const phiIndex = Math.log10(deltaLat) / Math.log10(phi);
+        
+        document.getElementById('phiIndex').textContent = `φₙ Index: ${phiIndex.toFixed(3)}`;
+        document.getElementById('deltaLat').textContent = `Δ Giza: ${deltaLat.toFixed(4)}°`;
+        document.getElementById('coords').textContent = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+        
+        phiData.push({
+          timestamp: new Date().toISOString(),
+          lat: pos.coords.latitude, lng: pos.coords.longitude,
+          deltaLat, phiIndex, gizaDistance: deltaLat * 111 // km
+        });
+        
+        document.getElementById('exportBtn').href = 'data:text/json;charset=utf-8,' + 
+          encodeURIComponent(JSON.stringify(phiData.slice(-100), null, 2));
+      }, () => {}, { enableHighAccuracy: true });
+    }
+    
+    function render() {
+      ctx.resetTransform();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      drawMap();
+      if (gridMode) drawGrid();
+      drawNodes();
+      
+      // GPS phi field if available
+      const phiIndex = 1.8; // Default for demo
+      drawPhiField(phiIndex);
+      
+      requestAnimationFrame(render);
+    }
+    
+    window.toggleMap = () => mapMode = !mapMode;
+    window.toggleGrid = () => gridMode = !gridMode;
+    window.resetView = () => { scale = 1; offsetX = 0; offsetY = 0; };
+    
+    // Resize handler
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    
+    render();
+  </script>
+</body>
+</html>
