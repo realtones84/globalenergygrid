@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Φ Earth Ultra AI Research</title>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+
+<style>
+body{margin:0;background:black;color:#ffd700;font-family:monospace;overflow:hidden}
+#ui{position:absolute;top:10px;left:10px;z-index:10;background:#000c;padding:10px;border-radius:8px;max-width:360px}
+button{background:#ffd700;border:none;padding:6px;margin:3px;font-weight:bold;cursor:pointer}
+input{width:100%}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+<b>Φ ULTRA AI EARTH</b><br><br>
+
+Time Filter:
+<input type="range" min="-5000" max="2026" value="2026" id="timeSlider">
+
+<br><br>
+
+<button onclick="toggleTerrain()">Terrain</button>
+<button onclick="toggleClusters()">AI Clusters</button>
+<button onclick="togglePhi()">Φ Network</button>
+<button onclick="scanPhi()">Scan φ</button>
+<button onclick="loadOSM()">Load 40k Sites</button>
+<button onclick="exportData()">Export</button>
+
+<div id="info"></div>
+</div>
+
+<script>
+
+/* =========================
+   BASIC SETUP
+========================= */
+
+const phi=1.6180339887
+let showPhi=true
+let showTerrain=true
+let showClusters=false
+
+let sites=[]
+
+/* =========================
+   THREE.JS EARTH
+========================= */
+
+const scene=new THREE.Scene()
+
+const camera=new THREE.PerspectiveCamera(
+60,window.innerWidth/window.innerHeight,0.1,2000)
+
+const renderer=new THREE.WebGLRenderer({antialias:true})
+renderer.setSize(window.innerWidth,window.innerHeight)
+document.body.appendChild(renderer.domElement)
+
+/* SATELLITE TEXTURE */
+
+const texture=new THREE.TextureLoader().load(
+"https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.jpg"
+)
+
+/* REAL TERRAIN HEIGHT MAP */
+
+const heightMap=new THREE.TextureLoader().load(
+"https://threejs.org/examples/textures/terrain/heightmap.png"
+)
+
+/* SPHERE WITH DISPLACEMENT */
+
+const geometry=new THREE.SphereGeometry(5,128,128)
+
+const material=new THREE.MeshStandardMaterial({
+map:texture,
+displacementMap:heightMap,
+displacementScale:0.3
+})
+
+const earth=new THREE.Mesh(geometry,material)
+
+scene.add(earth)
+
+const light=new THREE.PointLight(0xffffff,1.2)
+light.position.set(10,10,10)
+scene.add(light)
+
+camera.position.z=12
+
+function animate(){
+requestAnimationFrame(animate)
+earth.rotation.y+=0.0005
+renderer.render(scene,camera)
+}
+animate()
+
+/* =========================
+   SITE SYSTEM
+========================= */
+
+function addSite(name,lat,lng,year){
+
+sites.push({name,lat,lng,year})
+}
+
+function loadCore(){
+
+addSite("Giza",29.9792,31.1342,-2560)
+addSite("Stonehenge",51.1788,-1.8262,-3000)
+addSite("Machu Picchu",-13.1631,-72.545,1450)
+
+}
+
+loadCore()
+
+/* =========================
+   OSM 40K LOAD
+========================= */
+
+async function loadOSM(){
+
+try{
+
+const query=
+"https://overpass-api.de/api/interpreter?data=[out:json];node[\"historic\"=\"archaeological_site\"];out;"
+
+const r=await fetch(query)
+const data=await r.json()
+
+data.elements.forEach(e=>{
+sites.push({
+name:"OSM Site",
+lat:e.lat,
+lng:e.lon,
+year:0
+})
+})
+
+document.getElementById("info").innerText=
+"Loaded Sites: "+sites.length
+
+}catch{}
+
+}
+
+/* =========================
+   TIME FILTER
+========================= */
+
+document.getElementById("timeSlider")
+.oninput=function(){
+
+let year=parseInt(this.value)
+
+filterByTime(year)
+
+}
+
+function filterByTime(year){
+
+// Simple filter logic
+// (shows sites before selected year)
+
+currentSites=sites.filter(s=>s.year<=year)
+
+}
+
+/* =========================
+   2D MAP PROJECTION
+========================= */
+
+const canvas=document.createElement("canvas")
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight
+document.body.appendChild(canvas)
+canvas.style.position="absolute"
+canvas.style.top=0
+canvas.style.left=0
+canvas.style.zIndex=5
+canvas.style.pointerEvents="none"
+
+const ctx=canvas.getContext("2d")
+
+function project(lat,lng){
+
+const r=300
+const x=canvas.width/2+
+r*Math.cos(lat*Math.PI/180)*
+Math.sin(lng*Math.PI/180)
+
+const y=canvas.height/2-
+r*Math.sin(lat*Math.PI/180)
+
+return{x,y}
+
+}
+
+/* =========================
+   PHI NETWORK
+========================= */
+
+function distance(a,b){
+
+const R=6371
+const dLat=(b.lat-a.lat)*Math.PI/180
+const dLng=(b.lng-a.lng)*Math.PI/180
+
+const s=Math.sin(dLat/2)**2+
+Math.cos(a.lat*Math.PI/180)*
+Math.cos(b.lat*Math.PI/180)*
+Math.sin(dLng/2)**2
+
+return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s))
+}
+
+function drawPhi(){
+
+ctx.strokeStyle="#ffaa0044"
+
+for(let i=0;i<sites.length;i++){
+for(let j=i+1;j<sites.length;j++){
+
+let d=distance(sites[i],sites[j])
+let p=Math.log(d)/Math.log(phi)
+
+if(Math.abs(p-Math.round(p))<0.03){
+
+let a=project(sites[i].lat,sites[i].lng)
+let b=project(sites[j].lat,sites[j].lng)
+
+ctx.beginPath()
+ctx.moveTo(a.x,a.y)
+ctx.lineTo(b.x,b.y)
+ctx.stroke()
+
+}
+
+}}
+
+}
+
+/* =========================
+   AI CLUSTERING (K-MEANS)
+========================= */
+
+function kmeans(k=5){
+
+if(sites.length<k)return
+
+let centroids=sites.slice(0,k)
+
+for(let iter=0;iter<5;iter++){
+
+let clusters=Array.from({length:k},()=>[])
+
+sites.forEach(s=>{
+let best=0
+let min=999999
+
+centroids.forEach((c,i)=>{
+let d=Math.hypot(s.lat-c.lat,s.lng-c.lng)
+if(d<min){min=d;best=i}
+})
+
+clusters[best].push(s)
+})
+
+centroids=clusters.map(cluster=>{
+if(cluster.length===0)return centroids[0]
+return{
+lat:cluster.reduce((a,b)=>a+b.lat,0)/cluster.length,
+lng:cluster.reduce((a,b)=>a+b.lng,0)/cluster.length
+}
+})
+
+}
+
+return centroids
+}
+
+/* =========================
+   RENDER LOOP
+========================= */
+
+function render2D(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+sites.forEach(s=>{
+let p=project(s.lat,s.lng)
+ctx.fillStyle="#ffd700"
+ctx.fillRect(p.x,p.y,2,2)
+})
+
+if(showPhi)drawPhi()
+
+if(showClusters){
+
+let centers=kmeans(6)
+
+centers.forEach(c=>{
+let p=project(c.lat,c.lng)
+ctx.fillStyle="red"
+ctx.beginPath()
+ctx.arc(p.x,p.y,6,0,Math.PI*2)
+ctx.fill()
+})
+
+}
+
+requestAnimationFrame(render2D)
+}
+
+render2D()
+
+/* =========================
+   BUTTONS
+========================= */
+
+function togglePhi(){showPhi=!showPhi}
+function toggleClusters(){showClusters=!showClusters}
+function toggleTerrain(){showTerrain=!showTerrain}
+
+function scanPhi(){
+
+let results=[]
+
+sites.forEach(s=>{
+
+let d=distance(s,{lat:29.9792,lng:31.1342})
+let p=Math.log(d)/Math.log(phi)
+
+if(Math.abs(p-Math.round(p))<0.02)
+results.push(s.name)
+
+})
+
+document.getElementById("info").innerText=
+"φ Matches: "+results.length
+
+}
+
+function exportData(){
+
+const a=document.createElement("a")
+a.href="data:text/json;charset=utf-8,"+
+encodeURIComponent(JSON.stringify(sites))
+a.download="phi_ultra_dataset.json"
+a.click()
+
+}
+
+</script>
+</body>
+</html>
