@@ -1,72 +1,442 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Φ Earth Ultra AI Research</title>
+<meta charset="utf-8">
+<title>φₙ Global Energy Grid Visualizer — Φ Ultra AI Earth</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158/examples/js/controls/OrbitControls.js"></script>
 
-  <style>
-    body{
-      margin:0;
-      background:black;
-      color:#ffd700;
-      font-family:monospace;
-      overflow:hidden;
-    }
-    #ui{
-      position:absolute;
-      top:10px;
-      left:10px;
-      z-index:10;
-      background:#000c;
-      padding:10px;
-      border-radius:8px;
-      max-width:360px;
-    }
-    button{
-      background:#ffd700;
-      border:none;
-      padding:6px;
-      margin:3px;
-      font-weight:bold;
-      cursor:pointer;
-      color:#000;
-    }
-    input[type="range"]{
-      width:100%;
-    }
-  </style>
+<style>
+body{
+margin:0;
+overflow:hidden;
+background:#000;
+font-family:Arial,Helvetica,sans-serif;
+color:#ffd700;
+}
+
+#ui{
+position:absolute;
+top:10px;
+left:10px;
+z-index:10;
+background:rgba(0,0,0,0.75);
+padding:12px;
+border-radius:10px;
+max-width:360px;
+font-size:13px;
+}
+
+#ui h2{
+margin:0 0 10px 0;
+font-size:18px;
+}
+
+button{
+background:#ffd700;
+border:none;
+padding:6px;
+margin:3px;
+font-weight:bold;
+cursor:pointer;
+color:#000;
+}
+
+input[type="range"]{
+width:100%;
+}
+
+#siteInfo{
+margin-top:8px;
+font-size:12px;
+}
+
+canvas.overlay{
+position:absolute;
+top:0;
+left:0;
+pointer-events:none;
+z-index:5;
+}
+
+canvas{
+touch-action:none;
+}
+</style>
 </head>
 
 <body>
 
 <div id="ui">
-  <b>Φ ULTRA AI EARTH</b><br><br>
+<h2>Φ ULTRA AI EARTH</h2>
 
-  Time Filter:
-  <input type="range" min="-5000" max="2026" value="2026" id="timeSlider">
+Time Filter:
+<input type="range" min="-5000" max="2026" value="2026" id="timeSlider">
 
-  <br><br>
+<br><br>
 
-  <button onclick="toggleTerrain()">Terrain</button>
-  <button onclick="toggleClusters()">AI Clusters</button>
-  <button onclick="togglePhi()">Φ Network</button>
-  <button onclick="scanPhi()">Scan φ</button>
-  <button onclick="loadOSM()">Load OSM Sites</button>
-  <button onclick="exportData()">Export</button>
+<button onclick="toggleTerrain()">Terrain</button>
+<button onclick="toggleClusters()">AI Clusters</button>
+<button onclick="togglePhi()">Φ Network</button>
+<button onclick="scanPhi()">Scan φ</button>
+<button onclick="loadOSM()">Load OSM Sites</button>
+<button onclick="exportData()">Export</button>
 
-  <div id="info" style="margin-top:8px;font-size:12px;"></div>
+<div id="siteInfo">Tap a node to view details.</div>
 </div>
 
 <script>
+
 /* =========================
-   GLOBALS
+GLOBALS
 ========================= */
 
 const phi = 1.6180339887;
-let showPhi = true;
-let showTerrain = true;
+
+let scene,camera,renderer,controls,earth;
+let raycaster,mouse;
+
+let markers=[];
+let sites=[];
+let currentSites=[];
+
+let radius=5;
+
+let showPhi=true;
+let showClusters=false;
+let showTerrain=true;
+
+/* =========================
+THREE EARTH
+========================= */
+
+function init3D(){
+
+scene=new THREE.Scene();
+
+camera=new THREE.PerspectiveCamera(
+60,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+);
+
+camera.position.z=15;
+
+renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setClearColor(0x111111);
+
+document.body.appendChild(renderer.domElement);
+
+controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
+
+const ambient=new THREE.AmbientLight(0xffffff,0.6);
+scene.add(ambient);
+
+const light=new THREE.DirectionalLight(0xffffff,1);
+light.position.set(5,3,5);
+scene.add(light);
+
+const textureLoader=new THREE.TextureLoader();
+
+const earthTexture=textureLoader.load(
+"https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.jpg"
+);
+
+const heightMap=textureLoader.load(
+"https://threejs.org/examples/textures/terrain/heightmap.png"
+);
+
+const geometry=new THREE.SphereGeometry(radius,128,128);
+
+const material=new THREE.MeshPhongMaterial({
+map:earthTexture,
+displacementMap:heightMap,
+displacementScale:0.3
+});
+
+earth=new THREE.Mesh(geometry,material);
+scene.add(earth);
+
+raycaster=new THREE.Raycaster();
+mouse=new THREE.Vector2();
+
+window.addEventListener("click",onClick);
+window.addEventListener("touchstart",onTouch);
+window.addEventListener("resize",onResize);
+
+}
+
+/* =========================
+LAT/LON → SPHERE
+========================= */
+
+function latLonToVector3(lat,lon,r){
+
+const phi=(90-lat)*(Math.PI/180);
+const theta=(lon+180)*(Math.PI/180);
+
+return new THREE.Vector3(
+-r*Math.sin(phi)*Math.cos(theta),
+r*Math.cos(phi),
+r*Math.sin(phi)*Math.sin(theta)
+);
+
+}
+
+/* =========================
+MARKERS
+========================= */
+
+function addMarker(site){
+
+const markerGeom=new THREE.SphereGeometry(0.07,16,16);
+const markerMat=new THREE.MeshBasicMaterial({color:0xffd700});
+const marker=new THREE.Mesh(markerGeom,markerMat);
+
+const pos=latLonToVector3(site.lat,site.lon,radius+0.05);
+marker.position.copy(pos);
+
+marker.userData=site;
+
+scene.add(marker);
+markers.push(marker);
+
+}
+
+/* =========================
+SITE DATABASE
+========================= */
+
+function createSites(){
+
+sites=[
+
+{name:"Giza Great Pyramid",lat:29.9792,lon:31.1342,year:-2560,desc:"φ₃ node – Great Pyramid complex"},
+{name:"Jerusalem Temple Mount",lat:31.7780,lon:35.2350,year:-1000,desc:"φ₄ grid anchor"},
+{name:"Baalbek Megaliths",lat:34.0069,lon:36.2038,year:-2000,desc:"Megalithic temple platform"},
+
+{name:"Stonehenge",lat:51.1788,lon:-1.8262,year:-3000,desc:"British megalithic circle"},
+{name:"Teotihuacan",lat:19.6925,lon:-98.8430,year:-200,desc:"Mesoamerican city grid"},
+{name:"Göbekli Tepe",lat:37.2231,lon:38.9226,year:-9000,desc:"Prehistoric megalithic complex"},
+{name:"Easter Island",lat:-27.1127,lon:-109.3497,year:1200,desc:"Moai statues"},
+{name:"Machu Picchu",lat:-13.1631,lon:-72.5450,year:1450,desc:"Inca mountain city"},
+{name:"Chichen Itza",lat:20.6830,lon:-88.5678,year:800,desc:"Mayan pyramid complex"},
+{name:"Tiwanaku",lat:-16.5547,lon:-68.6733,year:500,desc:"Bolivian megalithic complex"},
+{name:"Angkor Wat",lat:13.4125,lon:103.8670,year:1100,desc:"Khmer temple complex"},
+{name:"Ollantaytambo",lat:-13.2583,lon:-72.2630,year:1400,desc:"Inca fortress"},
+{name:"Yonaguni Monument",lat:24.4661,lon:122.9340,year:0,desc:"Submerged structure"},
+{name:"Puma Punku",lat:-16.5578,lon:-68.6790,year:600,desc:"Precision stone site"},
+{name:"Great Wall China",lat:40.4319,lon:116.5704,year:-200,desc:"Ancient fortification"},
+{name:"Taj Mahal",lat:27.1751,lon:78.0421,year:1653,desc:"Golden proportion architecture"},
+{name:"Sigiriya",lat:7.9570,lon:80.7603,year:500,desc:"Sri Lankan citadel"},
+{name:"Borobudur",lat:-7.6079,lon:110.2038,year:800,desc:"Buddhist temple pyramid"},
+{name:"Khajuraho",lat:24.8318,lon:79.9199,year:950,desc:"Indian temple complex"},
+{name:"Great Zimbabwe",lat:-20.2668,lon:30.9333,year:1100,desc:"African stone city"},
+{name:"Axum",lat:14.1244,lon:38.7240,year:100,desc:"Ethiopian stelae"},
+{name:"Petra",lat:30.3285,lon:35.4444,year:-300,desc:"Rock carved city"},
+{name:"Persepolis",lat:29.9349,lon:52.8915,year:-500,desc:"Persian capital"},
+{name:"Luxor Karnak",lat:25.7187,lon:32.6573,year:-2000,desc:"Egyptian temple complex"},
+{name:"Nan Madol",lat:6.8453,lon:158.3260,year:1200,desc:"Pacific stone city"},
+{name:"Tongatapu",lat:-21.1334,lon:-175.2010,year:1200,desc:"Polynesian node"},
+{name:"Cheyenne Mountain",lat:38.7400,lon:-104.8480,year:1960,desc:"Modern military complex"},
+{name:"Derinkuyu Underground City",lat:38.3730,lon:34.7350,year:700,desc:"Subterranean city"},
+{name:"Notre Dame Paris",lat:48.8530,lon:2.3499,year:1163,desc:"French cathedral"},
+{name:"Cologne Cathedral",lat:50.9413,lon:6.9583,year:1248,desc:"Gothic cathedral"},
+{name:"Milan Cathedral",lat:45.4642,lon:9.1916,year:1386,desc:"Italian cathedral"},
+{name:"Rome Vatican",lat:41.9029,lon:12.4534,year:1506,desc:"St Peter's Basilica"},
+{name:"Delphi",lat:38.4828,lon:22.5010,year:-700,desc:"Greek oracle"},
+{name:"Mount Sinai",lat:28.5394,lon:33.9750,year:-1200,desc:"Biblical mountain"},
+{name:"Nazca Lines",lat:-14.7390,lon:-75.1300,year:-200,desc:"Desert geoglyphs"},
+{name:"Uluru",lat:-25.3444,lon:131.0369,year:-1000,desc:"Australian monolith"},
+{name:"Mount Kailash",lat:31.0675,lon:81.3119,year:-1000,desc:"Sacred Himalayan peak"},
+{name:"Chartres Cathedral",lat:48.4472,lon:1.4890,year:1200,desc:"Labyrinth cathedral"},
+{name:"Mont Saint Michel",lat:48.6360,lon:-1.5115,year:700,desc:"Tidal island abbey"},
+{name:"Temple of Luxor",lat:25.6990,lon:32.6396,year:-1400,desc:"Egyptian temple"},
+{name:"Valley of Kings",lat:25.7402,lon:32.6014,year:-1500,desc:"Royal necropolis"},
+{name:"Mesa Verde",lat:37.2309,lon:-108.4618,year:1100,desc:"Cliff dwellings"}
+
+];
+
+sites.forEach(addMarker);
+currentSites=[...sites];
+
+}
+
+/* =========================
+GREAT CIRCLE
+========================= */
+
+function createGreatCircle(name1,name2){
+
+const siteA=markers.find(m=>m.userData.name===name1);
+const siteB=markers.find(m=>m.userData.name===name2);
+
+if(!siteA||!siteB)return;
+
+const points=[];
+const segments=128;
+
+for(let i=0;i<=segments;i++){
+
+const t=i/segments;
+
+const v1=siteA.position.clone().normalize();
+const v2=siteB.position.clone().normalize();
+
+const v=v1.clone().lerp(v2,t).normalize().multiplyScalar(radius+0.02);
+
+points.push(v);
+
+}
+
+const geometry=new THREE.BufferGeometry().setFromPoints(points);
+const material=new THREE.LineBasicMaterial({color:0x00ffff});
+const line=new THREE.Line(geometry,material);
+
+scene.add(line);
+
+}
+
+/* =========================
+CLICK
+========================= */
+
+function onClick(event){
+
+mouse.x=(event.clientX/window.innerWidth)*2-1;
+mouse.y=-(event.clientY/window.innerHeight)*2+1;
+
+raycaster.setFromCamera(mouse,camera);
+const intersects=raycaster.intersectObjects(markers);
+
+if(intersects.length>0){
+
+const site=intersects[0].object.userData;
+
+document.getElementById("siteInfo").innerHTML=
+"<b>"+site.name+"</b><br>"+
+site.desc+
+"<br>Lat: "+site.lat+" Lon: "+site.lon;
+
+}
+
+}
+
+function onTouch(e){
+if(e.touches.length>0){
+onClick(e.touches[0]);
+}
+}
+
+/* =========================
+RESIZE
+========================= */
+
+function onResize(){
+camera.aspect=window.innerWidth/window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth,window.innerHeight);
+}
+
+/* =========================
+FEATURE BUTTONS
+========================= */
+
+function toggleTerrain(){
+showTerrain=!showTerrain;
+earth.material.displacementScale=showTerrain?0.3:0;
+}
+
+function togglePhi(){
+showPhi=!showPhi;
+}
+
+function toggleClusters(){
+showClusters=!showClusters;
+}
+
+function scanPhi(){
+alert("Φ scan prototype active");
+}
+
+function exportData(){
+
+const a=document.createElement("a");
+a.href="data:text/json;charset=utf-8,"+
+encodeURIComponent(JSON.stringify(sites,null,2));
+a.download="phi_ultra_dataset.json";
+a.click();
+
+}
+
+/* =========================
+OSM LOAD
+========================= */
+
+async function loadOSM(){
+
+try{
+
+const query=
+"https://overpass-api.de/api/interpreter?data=[out:json];node[\"historic\"=\"archaeological_site\"];out 500;";
+
+const r=await fetch(query);
+const data=await r.json();
+
+data.elements.forEach(e=>{
+
+const site={
+name:e.tags?.name||"OSM Site",
+lat:e.lat,
+lon:e.lon,
+year:0,
+desc:"OpenStreetMap archaeological site"
+};
+
+sites.push(site);
+addMarker(site);
+
+});
+
+}catch(e){
+console.log("OSM load failed",e);
+}
+
+}
+
+/* =========================
+ANIMATION
+========================= */
+
+function animate(){
+requestAnimationFrame(animate);
+controls.update();
+earth.rotation.y+=0.0005;
+renderer.render(scene,camera);
+}
+
+/* =========================
+START
+========================= */
+
+init3D();
+createSites();
+
+createGreatCircle("Giza Great Pyramid","Jerusalem Temple Mount");
+createGreatCircle("Jerusalem Temple Mount","Baalbek Megaliths");
+
+animate();
+
+</script>
+
+</body>
+</html>let showTerrain = true;
 let showClusters = false;
 
 let sites = [];
