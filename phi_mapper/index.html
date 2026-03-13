@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin:0; background:#000; font-family:monospace; color:#ffd700; }
+    #hud { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.9); padding:20px; border-radius:10px; }
+    canvas { width:100vw; height:100vh; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="hud">
+    <div><b>φₙ GRID DETECTOR v1.2</b></div>
+    <div id="phiIndex">-</div>
+    <div id="deltaLat">-</div>
+    <div id="status">-</div>
+    <div id="coords">-</div>
+    <div><a id="exportBtn" href="#" download="phi_grid.json" style="color:#00ff00;font-size:14px;">📊 Export φₙ Data</a></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const phi = 1.6180339887;
+    const giza = 29.9792458;
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    let phiData = [];
+    let lastUpdate = 0;
+
+    function drawPhiField(phiIndex) {
+      // Black background
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const scale = phiIndex * 120;
+      
+      // Pulsing golden core
+      const pulse = (Math.sin(Date.now() * 0.01) * 0.3 + 0.7);
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, scale * 2);
+      gradient.addColorStop(0, `rgba(255, 215, 0, ${pulse})`);
+      gradient.addColorStop(0.4, `rgba(255, 165, 0, ${pulse * 0.5})`);
+      gradient.addColorStop(1, 'rgba(0, 50, 100, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Golden φ spirals
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      for(let i = 0; i < 8; i++) {
+        const radius = scale * Math.pow(phi, i / 6);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // φₙ readouts around edge
+      ctx.fillStyle = '#ffd700';
+      ctx.font = '20px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`φ = ${phi.toFixed(7)}`, canvas.width/2, 40);
+    }
+
+    // GPS φₙ detection
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(pos => {
+        const now = Date.now();
+        if (now - lastUpdate < 1000) return; // 1s throttle
+        lastUpdate = now;
+        
+        const deltaLat = Math.abs(pos.coords.latitude - giza);
+        const phiIndex = Math.log10(deltaLat) / Math.log10(phi);
+        
+        // Update HUD
+        document.getElementById('phiIndex').textContent = `φₙ Index: ${phiIndex.toFixed(3)}`;
+        document.getElementById('deltaLat').textContent = `Δ Giza: ${deltaLat.toFixed(4)}°`;
+        document.getElementById('coords').textContent = `GPS: ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+        
+        const status = phiIndex < 1.5 ? 'φ₁ NODE' : phiIndex < 2.5 ? 'φ² RESONANCE' : 'φ³+ ANCHOR';
+        document.getElementById('status').innerHTML = `<span style="color:#${phiIndex<1.5?'00ff00':'ffaa00'}">${status}</span>`;
+        
+        // Log data
+        phiData.push({
+          timestamp: new Date().toISOString(),
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          deltaLat: deltaLat,
+          phiIndex: phiIndex,
+          status: status
+        });
+        
+        // Export link
+        const jsonData = JSON.stringify(phiData.slice(-50), null, 2);
+        document.getElementById('exportBtn').href = 'data:text/json;charset=utf-8,' + encodeURIComponent(jsonData);
+        
+        // Draw field
+        drawPhiField(phiIndex);
+        
+      }, err => {
+        document.getElementById('status').innerHTML = '<span style="color:#ff4444">GPS Error</span>';
+        drawPhiField(2.0); // Demo mode
+      }, { enableHighAccuracy: true });
+    } else {
+      document.getElementById('status').innerHTML = '<span style="color:#ffaa00">No GPS</span>';
+      drawPhiField(2.0); // Demo mode
+    }
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      // Pulsing effect continues
+    }
+    animate();
+  </script>
+</body>
+</html>
