@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Phi Earth Explorer</title>
+
+<link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+
+<canvas id="map"></canvas>
+
+<div id="hud">
+
+<b>Φ EARTH EXPLORER</b>
+
+<div id="coords"></div>
+
+<div id="nodePanel"></div>
+
+</div>
+
+<div id="controls">
+
+<button onclick="toggleProjection()">Projection</button>
+
+<button onclick="toggleGrid()">Grid</button>
+
+<button onclick="togglePhi()">Φ Geometry</button>
+
+<button onclick="exportDataset()">Export</button>
+
+</div>
+
+<script src="phiNodes.js"></script>
+<script src="geometryEngine.js"></script>
+<script src="commonsLoader.js"></script>
+<script src="mapEngine.js"></script>
+
+</body>
+</html>
